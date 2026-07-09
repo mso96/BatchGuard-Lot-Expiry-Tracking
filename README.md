@@ -25,6 +25,27 @@ npm run build
 
 Current verification status: all 10 tests pass, type check passes, and production build passes.
 
+## Publish For Shopify Testing
+
+This MVP is a Node Remix server app. Do not deploy it as a Cloudflare Worker/static assets app; that path only serves files and will not run the Shopify app server, webhooks, or Prisma database code.
+
+Recommended quick publish path:
+
+1. Create a Render web service from this GitHub repo.
+2. Use the included `render.yaml` blueprint.
+3. Set `SHOPIFY_APP_URL` to the Render service URL after the first deploy.
+4. Set `SHOPIFY_API_SECRET` as a secret environment variable.
+5. Keep `DATABASE_URL=file:/var/data/batchguard.sqlite` for MVP testing. Move to Postgres before production/App Store submission.
+6. Update `shopify.app.toml` and the Shopify Dev Dashboard app URLs to the same Render URL.
+7. Run `shopify app deploy`.
+
+Render build/start commands are:
+
+```bash
+npm ci && npm run build
+npm run start:prod
+```
+
 ## Implemented MVP
 
 - Prisma schema, migrations, and seed data.

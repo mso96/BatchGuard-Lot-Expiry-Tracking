@@ -1,5 +1,5 @@
 name = "BatchGuard — Lot & Expiry Tracking"
-client_id = "replace-with-shopify-client-id"
+client_id = "df413c77e6ed80c6b0115f1d00a9e73e"
 application_url = "https://example.ngrok-free.app"
 embedded = true
 

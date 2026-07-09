@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: batchguard-lot-expiry-tracking
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /app
+    disk:
+      name: batchguard-sqlite
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: file:/var/data/batchguard.sqlite
+      - key: SHOPIFY_APP_URL
+        sync: false
+      - key: SHOPIFY_API_SECRET
+        sync: false
+      - key: BATCHGUARD_BILLING_TEST_MODE
+        value: "true"
