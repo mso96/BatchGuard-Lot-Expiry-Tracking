@@ -1,0 +1,37 @@
+name = "BatchGuard — Lot & Expiry Tracking"
+client_id = "replace-with-shopify-client-id"
+application_url = "https://example.ngrok-free.app"
+embedded = true
+
+[access_scopes]
+scopes = "read_products,write_products,read_orders"
+
+[auth]
+redirect_urls = [
+  "https://example.ngrok-free.app/auth/callback",
+  "https://example.ngrok-free.app/auth/shopify/callback",
+  "https://example.ngrok-free.app/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2026-04"
+
+[[webhooks.subscriptions]]
+topics = ["orders/create"]
+uri = "/webhooks/orders/create"
+
+[[webhooks.subscriptions]]
+topics = ["customers/data_request"]
+uri = "/webhooks/customers/data_request"
+
+[[webhooks.subscriptions]]
+topics = ["customers/redact"]
+uri = "/webhooks/customers/redact"
+
+[[webhooks.subscriptions]]
+topics = ["shop/redact"]
+uri = "/webhooks/shop/redact"
+
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "/webhooks/app/uninstalled"

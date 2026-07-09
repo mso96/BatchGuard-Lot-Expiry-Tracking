@@ -1,0 +1,16 @@
+# BatchGuard Decisions
+
+## 2026-07-09
+
+- The attached workspace did not contain the initialized Shopify Remix template. Milestone 1 is implemented as additive project files that can be copied into, or overlaid onto, the official template without replacing template auth/session/webhook code.
+- `Session` is included in `prisma/schema.prisma` using the shape expected by Shopify's Prisma session storage so the template can keep owning access tokens and OAuth state.
+- Lot statuses and event types are stored as strings instead of Prisma enums because the requested dev database is SQLite and the schema needs to remain easy to migrate to Postgres later. Domain code should narrow these strings with TypeScript literal unions.
+- `Shop.settings` is JSON encoded into a string because Prisma's SQLite connector does not support the `Json` scalar. The app should read/write it through a small typed settings helper, and the production Postgres migration can promote it to native `jsonb`.
+- `ProcessedWebhook` and `AppSubscription` are included in the first migration to support upcoming idempotent webhooks and billing-route gating without a later schema reshuffle.
+- Milestone 2 adds a minimal Remix/Polaris shell because the official Shopify Remix template was not present in the workspace. The `/app` layout and `getCurrentShopId()` demo-shop lookup should be replaced by the template's authenticated route wrapper when integrating into a real Shopify app.
+- The Add Lot form calls Shopify's embedded `window.shopify.resourcePicker` when available and shows manual product/variant fields for local review. In the real embedded app, those fallback fields can become read-only debug fields or be hidden after App Bridge is wired.
+- Milestone 3 calculates value at risk from active lots crossing the shop warning threshold, using stored variant prices from the local DB. Shopify Admin product links use the product GID numeric suffix and the `.myshopify.com` shop handle until the official template's Admin URL helpers are available.
+- Milestone 4 processes `orders/create` inline in the local Remix route only because no queue/template webhook wrapper exists in this workspace. In the official Shopify template, replace the route body with `authenticate.webhook(request)`, enqueue the FIFO job, and keep the idempotent `processOrdersCreateWebhook` domain function as the worker payload.
+- Milestone 5 resolves CSV `variant SKU or ID` values against variants already known in the local lot database. In the real embedded app, unknown IDs/SKUs should be resolved through Shopify Admin GraphQL before failing the row.
+- Milestone 6 keeps scheduled work as callable job functions plus a `node-cron` dev scheduler. Production should run these functions from a proper queue/cron worker and use Shopify Admin GraphQL for `batchguard.nearest_expiry` metafield mirroring.
+- Milestone 7 implements billing and webhook compliance as template-compatible modules because the official Shopify Remix auth/webhook helpers are not present. Production integration must replace local header/payload webhook parsing with `authenticate.webhook(request)` and execute `appSubscriptionCreate` through the authenticated Admin GraphQL client.

@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+model Shop {
+  id               String            @id @default(cuid())
+  domain           String            @unique
+  settings         String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  lots             Lot[]
+  alertLogs        AlertLog[]
+  processedHooks   ProcessedWebhook[]
+  appSubscriptions AppSubscription[]
+  untrackedSales   UntrackedStockSale[]
+
+  @@index([domain])
+}
+
+model Lot {
+  id               String     @id @default(cuid())
+  shopId           String
+  shopifyProductId String
+  shopifyVariantId String
+  productTitle     String?
+  variantTitle     String?
+  variantSku       String?
+  variantPrice     Decimal?
+  lotNumber        String
+  expiryDate       DateTime
+  initialQuantity  Int
+  remainingQuantity Int
+  receivedAt       DateTime
+  note             String?
+  status           String     @default("ACTIVE")
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  shop             Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  events           LotEvent[]
+  alertLogs        AlertLog[]
+
+  @@index([shopId, shopifyVariantId])
+  @@index([shopId, expiryDate])
+  @@index([shopId, status])
+  @@unique([shopId, shopifyVariantId, lotNumber])
+}
+
+model LotEvent {
+  id            String   @id @default(cuid())
+  lotId         String
+  type          String
+  quantityDelta Int
+  orderId       String?
+  createdAt     DateTime @default(now())
+  lot           Lot      @relation(fields: [lotId], references: [id], onDelete: Cascade)
+
+  @@index([lotId, createdAt])
+  @@index([orderId])
+}
+
+model AlertLog {
+  id            String   @id @default(cuid())
+  shopId        String
+  lotId         String
+  sentAt        DateTime @default(now())
+  channel       String
+  thresholdDays Int
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  lot           Lot      @relation(fields: [lotId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, sentAt])
+  @@unique([shopId, lotId, channel, thresholdDays])
+}
+
+model ProcessedWebhook {
+  id             String   @id @default(cuid())
+  shopId         String
+  webhookId      String
+  topic          String
+  payloadDigest  String?
+  processedAt    DateTime @default(now())
+  shop           Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, webhookId])
+  @@index([shopId, topic, processedAt])
+}
+
+model AppSubscription {
+  id                         String    @id @default(cuid())
+  shopId                     String
+  shopifySubscriptionId       String    @unique
+  status                     String
+  planName                   String
+  priceAmount                Decimal
+  priceCurrencyCode          String
+  trialDays                  Int       @default(14)
+  test                       Boolean   @default(false)
+  currentPeriodEnd           DateTime?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  shop                       Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, status])
+}
+
+model UntrackedStockSale {
+  id               String   @id @default(cuid())
+  shopId           String
+  shopifyProductId String?
+  shopifyVariantId String
+  productTitle     String?
+  variantTitle     String?
+  variantSku       String?
+  orderId          String
+  orderName        String?
+  quantity         Int
+  createdAt        DateTime @default(now())
+  shop             Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, orderId, shopifyVariantId])
+  @@index([shopId, createdAt])
+  @@index([shopId, shopifyVariantId])
+}

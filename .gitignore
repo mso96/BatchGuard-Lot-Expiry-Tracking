@@ -1,0 +1,14 @@
+.env
+.DS_Store
+
+node_modules/
+build/
+work/
+outputs/
+
+prisma/dev.sqlite
+prisma/dev.sqlite-journal
+
+.shopify/
+.turbo/
+coverage/
