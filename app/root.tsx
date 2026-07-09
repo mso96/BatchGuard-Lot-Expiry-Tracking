@@ -13,6 +13,7 @@ import {
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { AppProvider as ShopifyAppProvider } from "@shopify/shopify-app-remix/react";
 import { Page, Text } from "@shopify/polaris";
+import { authenticate } from "./shopify.server";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: polarisStyles },
@@ -20,6 +21,13 @@ export const links: LinksFunction = () => [
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
+  // The first embedded document request must go through Shopify auth so App
+  // Bridge can add a session token before protected route loaders run. Auth
+  // endpoints themselves must stay available for Shopify's login callbacks.
+  if (!url.pathname.startsWith("/auth/") && !url.pathname.startsWith("/webhooks/")) {
+    await authenticate.admin(request);
+  }
+
   return json({
     apiKey:
       process.env.SHOPIFY_API_KEY ??
