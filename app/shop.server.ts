@@ -20,10 +20,16 @@ export type ShopSettingsInput = {
 
 export async function getCurrentShopId() {
   // TODO: Replace this with the Shopify template's authenticated admin/session lookup.
-  const shop = await prisma.shop.upsert({
+  const existingShop = await prisma.shop.findUnique({
     where: { domain: demoShopDomain },
-    update: {},
-    create: {
+  });
+
+  if (existingShop) {
+    return existingShop.id;
+  }
+
+  const shop = await prisma.shop.create({
+    data: {
       domain: demoShopDomain,
       settings: JSON.stringify(defaultSettings),
     },
