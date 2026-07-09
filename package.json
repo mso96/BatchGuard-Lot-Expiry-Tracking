@@ -13,7 +13,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "postinstall": "export DATABASE_URL=${DATABASE_URL:-file:./prisma/dev.sqlite}; prisma generate",
     "start:prod": "export DATABASE_URL=${DATABASE_URL:-file:/var/data/batchguard.sqlite}; mkdir -p /var/data; prisma migrate deploy && remix-serve ./build/server/index.js",
-    "start": "remix-serve ./build/server/index.js",
+    "start": "npm run start:prod",
     "test": "vitest run"
   },
   "prisma": {
