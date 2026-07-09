@@ -8,6 +8,8 @@ outputs/
 
 prisma/dev.sqlite
 prisma/dev.sqlite-journal
+prisma/render.sqlite
+prisma/render.sqlite-journal
 
 .shopify/
 .turbo/

@@ -6,15 +6,11 @@ services:
     buildCommand: npm ci && npm run build
     startCommand: npm run start:prod
     healthCheckPath: /app
-    disk:
-      name: batchguard-sqlite
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: file:/var/data/batchguard.sqlite
+        value: file:./render.sqlite
       - key: SHOPIFY_APP_URL
         sync: false
       - key: SHOPIFY_API_SECRET
