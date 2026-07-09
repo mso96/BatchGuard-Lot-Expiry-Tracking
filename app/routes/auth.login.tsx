@@ -22,7 +22,8 @@ function requestWithInferredShop(request: Request) {
     }
   }
 
-  const fallbackShop = process.env.SHOPIFY_FALLBACK_SHOP;
+  const fallbackShop =
+    process.env.SHOPIFY_FALLBACK_SHOP ?? "uxfq5t-mp.myshopify.com";
   if (fallbackShop) {
     url.searchParams.set("shop", fallbackShop);
     return new Request(url, request);
