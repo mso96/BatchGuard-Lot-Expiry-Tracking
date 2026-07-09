@@ -8,23 +8,27 @@ function requestWithInferredShop(request: Request) {
   }
 
   const referer = request.headers.get("referer");
-  if (!referer) {
-    return request;
-  }
-
-  try {
+  if (referer) {
+    try {
     const refererUrl = new URL(referer);
     const match = refererUrl.pathname.match(/\/store\/([^/]+)/);
     const storeHandle = match?.[1];
-    if (!storeHandle) {
-      return request;
+      if (storeHandle) {
+        url.searchParams.set("shop", `${storeHandle}.myshopify.com`);
+        return new Request(url, request);
+      }
+    } catch {
+      // Fall back below.
     }
-
-    url.searchParams.set("shop", `${storeHandle}.myshopify.com`);
-    return new Request(url, request);
-  } catch {
-    return request;
   }
+
+  const fallbackShop = process.env.SHOPIFY_FALLBACK_SHOP;
+  if (fallbackShop) {
+    url.searchParams.set("shop", fallbackShop);
+    return new Request(url, request);
+  }
+
+  return request;
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
