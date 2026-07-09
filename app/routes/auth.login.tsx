@@ -1,12 +1,45 @@
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 import { login } from "../shopify.server";
 
+function requestWithInferredShop(request: Request) {
+  const url = new URL(request.url);
+  if (url.searchParams.get("shop")) {
+    return request;
+  }
+
+  const referer = request.headers.get("referer");
+  if (!referer) {
+    return request;
+  }
+
+  try {
+    const refererUrl = new URL(referer);
+    const match = refererUrl.pathname.match(/\/store\/([^/]+)/);
+    const storeHandle = match?.[1];
+    if (!storeHandle) {
+      return request;
+    }
+
+    url.searchParams.set("shop", `${storeHandle}.myshopify.com`);
+    return new Request(url, request);
+  } catch {
+    return request;
+  }
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
-  const errors = await login(request);
+  const nextRequest = requestWithInferredShop(request);
+  const errors = await login(nextRequest);
+  if (Object.keys(errors).length === 0) {
+    return new Response("Open BatchGuard from Shopify Admin Apps.", {
+      headers: { "content-type": "text/plain" },
+    });
+  }
+
   return json(errors);
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const errors = await login(request);
+  const errors = await login(requestWithInferredShop(request));
   return json(errors);
 }
