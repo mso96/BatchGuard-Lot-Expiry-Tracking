@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@remix-run/dev": "^2.17.0",
     "@remix-run/node": "^2.17.0",
     "@remix-run/react": "^2.17.0",
     "@remix-run/serve": "^2.17.0",
@@ -31,16 +32,15 @@
     "@vitejs/plugin-react": "^4.3.4",
     "isbot": "^5.1.25",
     "node-cron": "^4.6.0",
+    "prisma": "^6.19.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "vite": "^5.4.11"
   },
   "devDependencies": {
-    "@remix-run/dev": "^2.17.0",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "prisma": "^6.19.3",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vitest": "^2.1.5",
