@@ -10,10 +10,17 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: file:./render.sqlite
+        fromDatabase:
+          name: batchguard-postgres
+          property: connectionString
+      - key: SHOPIFY_API_KEY
+        value: df413c77e6ed80c6b0115f1d00a9e73e
       - key: SHOPIFY_APP_URL
         sync: false
       - key: SHOPIFY_API_SECRET
         sync: false
       - key: BATCHGUARD_BILLING_TEST_MODE
-        value: "true"
+        value: "false"
+databases:
+  - name: batchguard-postgres
+    plan: starter

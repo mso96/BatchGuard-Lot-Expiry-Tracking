@@ -1,4 +1,5 @@
-import type { LinksFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import {
   Links,
   Meta,
@@ -7,16 +8,30 @@ import {
   ScrollRestoration,
   useRouteError,
   isRouteErrorResponse,
+  useLoaderData,
 } from "@remix-run/react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
-import { AppProvider, Page, Text } from "@shopify/polaris";
-import enTranslations from "@shopify/polaris/locales/en.json";
+import { AppProvider as ShopifyAppProvider } from "@shopify/shopify-app-remix/react";
+import { Page, Text } from "@shopify/polaris";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: polarisStyles },
 ];
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  const url = new URL(request.url);
+  return json({
+    apiKey:
+      process.env.SHOPIFY_API_KEY ??
+      process.env.SHOPIFY_CLIENT_ID ??
+      "df413c77e6ed80c6b0115f1d00a9e73e",
+    host: url.searchParams.get("host"),
+  });
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { apiKey } = useLoaderData<typeof loader>();
+
   return (
     <html lang="en">
       <head>
@@ -26,7 +41,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <AppProvider i18n={enTranslations}>{children}</AppProvider>
+        <ShopifyAppProvider apiKey={apiKey} isEmbeddedApp>
+          {children}
+        </ShopifyAppProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

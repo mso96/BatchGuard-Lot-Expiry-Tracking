@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -28,7 +28,7 @@ model Session {
 model Shop {
   id               String            @id @default(cuid())
   domain           String            @unique
-  settings         String
+  settings         Json
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   lots             Lot[]

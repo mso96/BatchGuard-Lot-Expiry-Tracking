@@ -19,9 +19,10 @@ import {
   isBillingTestMode,
 } from "../models/billing.server";
 import { getCurrentShopId } from "../shop.server";
+import { authenticate } from "../shopify.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const shopId = await getCurrentShopId();
+  const shopId = await getCurrentShopId(request);
   const billingStatus = await getBillingStatus(shopId);
   const appUrl = process.env.SHOPIFY_APP_URL ?? new URL(request.url).origin;
 
@@ -36,13 +37,33 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const shopId = await getCurrentShopId();
+  const { admin } = await authenticate.admin(request);
+  const shopId = await getCurrentShopId(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
 
-  if (intent === "activate-local-test") {
+  if (intent === "activate-local-test" && isBillingTestMode()) {
     await createLocalTestSubscription(shopId);
     return redirect("/app");
+  }
+
+  if (intent === "subscribe") {
+    const appUrl = process.env.SHOPIFY_APP_URL ?? new URL(request.url).origin;
+    const mutation = buildAppSubscriptionCreateMutation({
+      appUrl,
+      test: process.env.SHOPIFY_BILLING_TEST_MODE === "true",
+    });
+    const response = await admin.graphql(mutation.query, {
+      variables: mutation.variables,
+    });
+    const result = await response.json();
+    const confirmationUrl =
+      result.data?.appSubscriptionCreate?.confirmationUrl ??
+      result.data?.appSubscriptionCreate?.confirmation_url;
+
+    if (typeof confirmationUrl === "string" && confirmationUrl.length > 0) {
+      return redirect(confirmationUrl);
+    }
   }
 
   return redirect("/app/billing");
@@ -85,9 +106,13 @@ export default function BillingPage() {
             </Text>
 
             <Form method="post">
-              <input type="hidden" name="intent" value="activate-local-test" />
+              <input
+                type="hidden"
+                name="intent"
+                value={billingStatus.testMode ? "activate-local-test" : "subscribe"}
+              />
               <Button submit variant="primary" loading={submitting}>
-                Activate local test subscription
+                {billingStatus.testMode ? "Activate local test subscription" : "Start subscription"}
               </Button>
             </Form>
           </BlockStack>
@@ -105,4 +130,3 @@ export default function BillingPage() {
     </Page>
   );
 }
-

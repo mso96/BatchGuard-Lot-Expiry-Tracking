@@ -20,7 +20,7 @@ import { discardLot, isLotStatus, listLots } from "../models/lot.server";
 import { getCurrentShopId } from "../shop.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const shopId = await getCurrentShopId();
+  const shopId = await getCurrentShopId(request);
   const url = new URL(request.url);
   const rawStatus = url.searchParams.get("status") ?? "ALL";
   const status = rawStatus === "ALL" || isLotStatus(rawStatus) ? rawStatus : "ALL";
@@ -46,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const shopId = await getCurrentShopId();
+  const shopId = await getCurrentShopId(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
   const lotId = formData.get("lotId");

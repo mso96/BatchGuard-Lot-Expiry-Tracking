@@ -1,5 +1,6 @@
 import { json, type ActionFunctionArgs } from "@remix-run/node";
 import { prisma } from "../db.server";
+import { authenticate } from "../shopify.server";
 import {
   digestPayload,
   processOrdersCreateWebhook,
@@ -7,14 +8,11 @@ import {
 } from "../models/orders.server";
 
 export async function action({ request }: ActionFunctionArgs) {
-  // TODO: Replace this route body with the Shopify template's `authenticate.webhook(request)`
-  // wrapper, then enqueue `processOrdersCreateWebhook` work instead of processing inline.
   try {
-    const shopDomain = request.headers.get("x-shopify-shop-domain");
+    const { shop: shopDomain, payload } = await authenticate.webhook(request);
     const webhookId = request.headers.get("x-shopify-webhook-id");
-    const payload = (await request.json()) as ShopifyOrderCreatePayload;
 
-    if (!shopDomain || !webhookId) {
+    if (!webhookId) {
       return json({ ok: true, skipped: "missing Shopify webhook headers" });
     }
 
@@ -29,7 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const result = await processOrdersCreateWebhook({
       shopId: shop.id,
       webhookId,
-      payload,
+      payload: payload as ShopifyOrderCreatePayload,
       payloadDigest: digestPayload(payload),
     });
 

@@ -1,11 +1,12 @@
+import type { Prisma } from "@prisma/client";
+import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { prisma } from "./db.server";
-
-const demoShopDomain = "example-dev-store.myshopify.com";
+import { authenticate } from "./shopify.server";
 
 const defaultSettings = {
   warningThresholdDays: 30,
-  notificationEmail: "ops@example-dev-store.myshopify.com",
-  timezone: "America/New_York",
+  notificationEmail: "",
+  timezone: "UTC",
   alertsEnabled: true,
 };
 
@@ -18,36 +19,43 @@ export type ShopSettingsInput = {
   alertsEnabled: boolean;
 };
 
-export async function getCurrentShopId() {
-  // TODO: Replace this with the Shopify template's authenticated admin/session lookup.
-  const existingShop = await prisma.shop.findUnique({
-    where: { domain: demoShopDomain },
-  });
+type AuthenticatedRequest = LoaderFunctionArgs["request"] | ActionFunctionArgs["request"];
 
-  if (existingShop) {
-    return existingShop.id;
-  }
-
-  const shop = await prisma.shop.create({
-    data: {
-      domain: demoShopDomain,
-      settings: JSON.stringify(defaultSettings),
-    },
-  });
+export async function getCurrentShopId(request: AuthenticatedRequest) {
+  const { session } = await authenticate.admin(request);
+  const shop = await ensureShopForDomain(session.shop);
 
   return shop.id;
 }
 
-export async function getCurrentShop() {
-  const shopId = await getCurrentShopId();
-  return prisma.shop.findUniqueOrThrow({
-    where: { id: shopId },
+export async function getCurrentShop(request: AuthenticatedRequest) {
+  const { session } = await authenticate.admin(request);
+  return ensureShopForDomain(session.shop);
+}
+
+export async function ensureShopForDomain(domain: string) {
+  const existingShop = await prisma.shop.findUnique({
+    where: { domain },
+  });
+
+  if (existingShop) {
+    return existingShop;
+  }
+
+  return prisma.shop.create({
+    data: {
+      domain,
+      settings: defaultSettings,
+    },
   });
 }
 
-export function parseShopSettings(settings: string): ShopSettings {
+export function parseShopSettings(settings: Prisma.JsonValue): ShopSettings {
   try {
-    const parsed = JSON.parse(settings) as Partial<ShopSettings>;
+    const parsed =
+      typeof settings === "string"
+        ? (JSON.parse(settings) as Partial<ShopSettings>)
+        : (settings as Partial<ShopSettings>);
     return {
       warningThresholdDays:
         typeof parsed.warningThresholdDays === "number"
@@ -79,6 +87,6 @@ export async function updateShopSettings(shopId: string, settings: ShopSettingsI
 
   return prisma.shop.update({
     where: { id: shopId },
-    data: { settings: JSON.stringify(normalizedSettings) },
+    data: { settings: normalizedSettings },
   });
 }

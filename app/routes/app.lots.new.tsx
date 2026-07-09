@@ -8,7 +8,7 @@ import { createLot } from "../models/lot.server";
 import { getCurrentShopId } from "../shop.server";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const shopId = await getCurrentShopId();
+  const shopId = await getCurrentShopId(request);
   const formData = await request.formData();
   const errors: Record<string, string> = {};
   const shopifyProductId = readRequiredString(formData, "shopifyProductId", errors);

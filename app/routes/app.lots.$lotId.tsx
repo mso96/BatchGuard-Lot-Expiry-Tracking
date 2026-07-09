@@ -16,8 +16,8 @@ import { adjustLotQuantity, discardLot, getLotForEdit, updateLot } from "../mode
 import { LotForm } from "../components/LotForm";
 import { getCurrentShopId } from "../shop.server";
 
-export async function loader({ params }: LoaderFunctionArgs) {
-  const shopId = await getCurrentShopId();
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const shopId = await getCurrentShopId(request);
   const lotId = params.lotId;
 
   if (!lotId) {
@@ -56,7 +56,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const shopId = await getCurrentShopId();
+  const shopId = await getCurrentShopId(request);
   const lotId = params.lotId;
 
   if (!lotId) {

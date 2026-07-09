@@ -30,7 +30,7 @@ const timezoneOptions = [
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const shop = await getCurrentShop();
+  const shop = await getCurrentShop(request);
   const settings = parseShopSettings(shop.settings);
   const url = new URL(request.url);
 
@@ -41,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const shop = await getCurrentShop();
+  const shop = await getCurrentShop(request);
   const formData = await request.formData();
   const thresholdDays = Number.parseInt(String(formData.get("warningThresholdDays") ?? ""), 10);
   const notificationEmail = String(formData.get("notificationEmail") ?? "").trim();

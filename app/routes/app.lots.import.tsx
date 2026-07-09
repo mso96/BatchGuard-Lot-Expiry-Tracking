@@ -20,8 +20,11 @@ import {
   commitLotCsvImport,
   previewLotCsvImport,
   type CsvImportPreview,
+  type VariantLookup,
+  type VariantResolver,
 } from "../models/csv-import.server";
 import { getCurrentShopId } from "../shop.server";
+import { authenticate } from "../shopify.server";
 
 type ActionData =
   | {
@@ -41,7 +44,9 @@ ELD-SYR-12,ELD-AUG-26,2026-08-31,24
 gid://shopify/ProductVariant/2000000004,ALM-OCT-26,2026-10-15,36`;
 
 export async function action({ request }: ActionFunctionArgs) {
-  const shopId = await getCurrentShopId();
+  const { admin } = await authenticate.admin(request);
+  const shopId = await getCurrentShopId(request);
+  const shopifyVariantResolver = createShopifyVariantResolver(admin.graphql);
   const formData = await request.formData();
   const intent = formData.get("intent");
   const csvText = await readCsvText(formData);
@@ -58,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "commit") {
-    const preview = await previewLotCsvImport(shopId, csvText);
+    const preview = await previewLotCsvImport(shopId, csvText, undefined, shopifyVariantResolver);
     if (preview.errorCount > 0) {
       return json<ActionData>(
         {
@@ -71,12 +76,59 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    await commitLotCsvImport(shopId, csvText);
+    await commitLotCsvImport(shopId, csvText, undefined, shopifyVariantResolver);
     return redirect("/app/lots");
   }
 
-  const preview = await previewLotCsvImport(shopId, csvText);
+  const preview = await previewLotCsvImport(shopId, csvText, undefined, shopifyVariantResolver);
   return json<ActionData>({ mode: "preview", csvText, preview });
+}
+
+function createShopifyVariantResolver(
+  graphql: (query: string, options?: { variables?: Record<string, unknown> }) => Promise<Response>,
+): VariantResolver {
+  return async (variantReference: string): Promise<VariantLookup | undefined> => {
+    const query = variantReference.startsWith("gid://shopify/ProductVariant/")
+      ? `id:${variantReference}`
+      : variantReference.match(/^\d+$/)
+        ? `id:gid://shopify/ProductVariant/${variantReference}`
+        : `sku:${variantReference}`;
+
+    const response = await graphql(
+      `#graphql
+        query BatchGuardFindVariant($query: String!) {
+          productVariants(first: 1, query: $query) {
+            nodes {
+              id
+              title
+              sku
+              price
+              product {
+                id
+                title
+              }
+            }
+          }
+        }
+      `,
+      { variables: { query } },
+    );
+    const result = await response.json();
+    const variant = result.data?.productVariants?.nodes?.[0];
+
+    if (!variant) {
+      return undefined;
+    }
+
+    return {
+      shopifyProductId: variant.product.id,
+      shopifyVariantId: variant.id,
+      productTitle: variant.product.title,
+      variantTitle: variant.title,
+      variantSku: variant.sku,
+      variantPrice: variant.price,
+    };
+  };
 }
 
 export default function ImportLots() {

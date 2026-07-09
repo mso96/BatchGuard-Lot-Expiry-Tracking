@@ -16,7 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return null;
   }
 
-  const shopId = await getCurrentShopId();
+  const shopId = await getCurrentShopId(request);
   const billingStatus = await getBillingStatus(shopId);
 
   if (!billingStatus.hasActiveSubscription) {

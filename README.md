@@ -1,19 +1,18 @@
 # BatchGuard — Lot & Expiry Tracking
 
-BatchGuard is a Shopify embedded app MVP for merchants selling food, cosmetics, and supplements. It tracks multiple lots per variant, expiration dates, FIFO order deductions, expiry alerts, CSV imports, and compliance webhooks.
+BatchGuard is a Shopify embedded app for merchants selling food, cosmetics, and supplements. It tracks multiple lots per variant, expiration dates, FIFO order deductions, expiry alerts, CSV imports, and compliance webhooks.
 
-## Local Setup
+## Production Branch Setup
 
 ```bash
 npm install --cache ./work/npm-cache
+cp .env.example .env
 npx prisma generate
-sqlite3 prisma/dev.sqlite < prisma/migrations/20260709140000_init_batchguard/migration.sql
-sqlite3 prisma/dev.sqlite < prisma/migrations/20260709173000_add_untracked_stock_sales/migration.sql
-npm run db:seed
+npx prisma migrate dev
 npm run dev -- --port 3000
 ```
 
-Open `http://127.0.0.1:3000/app`.
+Run through Shopify CLI or an app tunnel for embedded auth flows. Direct local browsing without a Shopify session is not supported on this branch.
 
 ## Verification
 
@@ -23,21 +22,18 @@ npm test
 npm run build
 ```
 
-Current verification status: all 10 tests pass, type check passes, and production build passes.
+Current verification status: type check passes and production build passes. Database integration tests require a Postgres `DATABASE_URL`.
 
-## Publish For Shopify Testing
+## Render Production Deploy
 
-This MVP is a Node Remix server app. Do not deploy it as a Cloudflare Worker/static assets app; that path only serves files and will not run the Shopify app server, webhooks, or Prisma database code.
+This branch is a Node Remix server app backed by Postgres. Do not deploy it as a Cloudflare Worker/static assets app.
 
-Recommended quick publish path:
-
-1. Create a Render web service from this GitHub repo.
-2. Use the included `render.yaml` blueprint.
-3. Set `SHOPIFY_APP_URL` to the Render service URL after the first deploy.
-4. Set `SHOPIFY_API_SECRET` as a secret environment variable.
-5. Keep `DATABASE_URL=file:/var/data/batchguard.sqlite` for MVP testing. Move to Postgres before production/App Store submission.
-6. Update `shopify.app.toml` and the Shopify Dev Dashboard app URLs to the same Render URL.
-7. Run `shopify app deploy`.
+1. Create the Render blueprint from `render.yaml`.
+2. Set `SHOPIFY_API_SECRET` as a secret environment variable.
+3. Set `SHOPIFY_APP_URL` to the final Render URL.
+4. Keep `BATCHGUARD_BILLING_TEST_MODE=false`.
+5. Use `SHOPIFY_BILLING_TEST_MODE=true` only for dev store billing tests.
+6. Run `shopify app deploy` after app config URLs match Render.
 
 Render build/start commands are:
 
@@ -46,26 +42,21 @@ npm ci && npm run build
 npm run start:prod
 ```
 
-## Implemented MVP
+## Production Integration Status
 
-- Prisma schema, migrations, and seed data.
+- Postgres Prisma schema and clean production migration.
+- Shopify Remix authentication/session storage.
+- Authenticated shop context for `/app/*` routes.
+- Authenticated webhook routes for orders, uninstall, and GDPR.
+- Shopify Billing redirect flow.
+- Admin GraphQL-backed CSV variant lookup.
+- Optional nearest-expiry metafield mirroring hook.
 - Lot list, add, edit, quantity adjustment, discard, and audit trail.
 - Expiry dashboard with summary cards, action-needed table, value at risk, and untracked stock sold.
 - `orders/create` webhook FIFO deduction with idempotency.
 - CSV import with dry-run preview and commit.
 - Alert digest job, nightly maintenance job, dev scheduler, and settings page.
-- Shopify Billing API mutation shape, billing gate, local test subscription, GDPR webhooks, uninstall cleanup, and Shopify app config scopes.
-
-## Shopify Template Integration Notes
-
-This workspace did not include the official Shopify Remix template. The app is structured so these local placeholders can be replaced by template plumbing:
-
-- Replace demo shop lookup in `app/shop.server.ts` with the template authenticated session/admin loader.
-- Replace webhook header parsing with `authenticate.webhook(request)`.
-- Execute `appSubscriptionCreate` through the authenticated Shopify Admin GraphQL client.
-- Move scheduled jobs from `node-cron` to production cron or queue workers.
-- Resolve CSV unknown SKUs/variant IDs through Admin GraphQL before failing rows.
-- Mirror nearest expiry metafields through Admin GraphQL in the nightly job.
+- GDPR webhooks, uninstall cleanup, and Shopify app config scopes.
 
 ## Required Shopify Scopes
 

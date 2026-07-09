@@ -17,7 +17,7 @@ import { getExpiryDashboard } from "../models/lot.server";
 import { getCurrentShop, parseShopSettings } from "../shop.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const shop = await getCurrentShop();
+  const shop = await getCurrentShop(request);
   const settings = parseShopSettings(shop.settings);
   const dashboard = await getExpiryDashboard(shop.id, settings.warningThresholdDays);
 

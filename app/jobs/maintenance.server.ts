@@ -5,14 +5,23 @@ export type NightlyMaintenanceResult = {
   expiredLots: number;
   depletedLots: number;
   metafieldMirrorUpdatesQueued: number;
+  metafieldMirrorUpdatesApplied: number;
 };
+
+export type VariantMetafieldMirror = (input: {
+  shopId: string;
+  shopifyVariantId: string;
+  nearestExpiryDate: string | null;
+}) => Promise<void>;
 
 export async function runNightlyMaintenanceJob({
   database = prisma,
   now = new Date(),
+  mirrorVariantMetafield,
 }: {
   database?: PrismaClient;
   now?: Date;
+  mirrorVariantMetafield?: VariantMetafieldMirror;
 } = {}): Promise<NightlyMaintenanceResult> {
   const today = startOfUtcDay(now);
 
@@ -47,12 +56,34 @@ export async function runNightlyMaintenanceJob({
     distinct: ["shopId", "shopifyVariantId"],
   });
 
-  // TODO: Use Shopify Admin GraphQL to mirror nearest expiry into
-  // `batchguard.nearest_expiry` for each affected variant. Queue this work in production.
+  let metafieldMirrorUpdatesApplied = 0;
+
+  if (mirrorVariantMetafield) {
+    for (const variant of affectedVariants) {
+      const nearestLot = await database.lot.findFirst({
+        where: {
+          shopId: variant.shopId,
+          shopifyVariantId: variant.shopifyVariantId,
+          status: "ACTIVE",
+          remainingQuantity: { gt: 0 },
+        },
+        orderBy: { expiryDate: "asc" },
+      });
+
+      await mirrorVariantMetafield({
+        shopId: variant.shopId,
+        shopifyVariantId: variant.shopifyVariantId,
+        nearestExpiryDate: nearestLot?.expiryDate.toISOString().slice(0, 10) ?? null,
+      });
+      metafieldMirrorUpdatesApplied += 1;
+    }
+  }
+
   return {
     expiredLots: expiredLots.count,
     depletedLots: depletedLots.count,
     metafieldMirrorUpdatesQueued: affectedVariants.length,
+    metafieldMirrorUpdatesApplied,
   };
 }
 

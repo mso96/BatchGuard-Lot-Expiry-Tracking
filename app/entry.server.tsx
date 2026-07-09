@@ -4,6 +4,7 @@ import { createReadableStreamFromReadable } from "@remix-run/node";
 import { RemixServer } from "@remix-run/react";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
+import { addDocumentResponseHeaders } from "./shopify.server";
 
 const abortDelay = 5_000;
 
@@ -13,6 +14,8 @@ export default function handleRequest(
   responseHeaders: Headers,
   remixContext: EntryContext,
 ) {
+  addDocumentResponseHeaders(request, responseHeaders);
+
   return new Promise((resolve, reject) => {
     let shellRendered = false;
     const userAgent = request.headers.get("user-agent");

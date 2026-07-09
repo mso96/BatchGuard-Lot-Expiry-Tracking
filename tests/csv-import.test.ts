@@ -92,12 +92,12 @@ async function createTestShop() {
   return prisma.shop.create({
     data: {
       domain,
-      settings: JSON.stringify({
+      settings: {
         warningThresholdDays: 30,
         notificationEmail: "test@example.com",
         timezone: "UTC",
         alertsEnabled: true,
-      }),
+      },
     },
   });
 }

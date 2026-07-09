@@ -8,7 +8,6 @@ const defaultSettings = {
   timezone: "America/New_York",
   alertsEnabled: true,
 };
-const encodedDefaultSettings = JSON.stringify(defaultSettings);
 
 type DemoLot = {
   shopifyProductId: string;
@@ -100,10 +99,10 @@ const demoLots: DemoLot[] = [
 async function main() {
   const shop = await prisma.shop.upsert({
     where: { domain: "example-dev-store.myshopify.com" },
-    update: { settings: encodedDefaultSettings },
+    update: { settings: defaultSettings },
     create: {
       domain: "example-dev-store.myshopify.com",
-      settings: encodedDefaultSettings,
+      settings: defaultSettings,
     },
   });
 

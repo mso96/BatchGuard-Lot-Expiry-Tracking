@@ -1,9 +1,9 @@
 import { json, type ActionFunctionArgs } from "@remix-run/node";
 import { noCustomerPiiStoredResponse } from "../models/gdpr.server";
+import { authenticate } from "../shopify.server";
 
 export async function action({ request }: ActionFunctionArgs) {
-  // TODO: Replace with Shopify template `authenticate.webhook(request)` verification.
-  await request.text();
+  await authenticate.webhook(request);
   return json(noCustomerPiiStoredResponse());
 }
 

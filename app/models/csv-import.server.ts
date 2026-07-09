@@ -35,7 +35,7 @@ type ParsedCsvRow = {
   quantityText: string;
 };
 
-type VariantLookup = {
+export type VariantLookup = {
   shopifyProductId: string;
   shopifyVariantId: string;
   productTitle?: string | null;
@@ -44,7 +44,7 @@ type VariantLookup = {
   variantPrice?: Prisma.Decimal | null;
 };
 
-type VariantResolver = (variantReference: string) => Promise<VariantLookup | undefined>;
+export type VariantResolver = (variantReference: string) => Promise<VariantLookup | undefined>;
 type DuplicateLotChecker = (
   shopifyVariantId: string,
   lotNumber: string,
@@ -56,8 +56,11 @@ export async function previewLotCsvImport(
   shopId: string,
   csvText: string,
   database: PrismaClient = prisma,
+  externalResolver?: VariantResolver,
 ): Promise<CsvImportPreview> {
-  const resolver = createVariantResolver(shopId, database);
+  const localResolver = createVariantResolver(shopId, database);
+  const resolver: VariantResolver = async (variantReference) =>
+    (await localResolver(variantReference)) ?? (await externalResolver?.(variantReference));
   const duplicateChecker: DuplicateLotChecker = async (shopifyVariantId, lotNumber) => {
     const existingLot = await database.lot.findUnique({
       where: {
@@ -151,9 +154,12 @@ export async function commitLotCsvImport(
   shopId: string,
   csvText: string,
   database: PrismaClient = prisma,
+  externalResolver?: VariantResolver,
 ): Promise<CsvImportCommitResult> {
-  const resolver = createVariantResolver(shopId, database);
-  const preview = await previewLotCsvImport(shopId, csvText, database);
+  const localResolver = createVariantResolver(shopId, database);
+  const resolver: VariantResolver = async (variantReference) =>
+    (await localResolver(variantReference)) ?? (await externalResolver?.(variantReference));
+  const preview = await previewLotCsvImport(shopId, csvText, database, externalResolver);
   const validRows = preview.rows.filter((row) => row.status === "valid");
 
   if (preview.errorCount > 0) {
