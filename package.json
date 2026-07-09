@@ -13,7 +13,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate",
     "start:prod": "prisma migrate deploy && remix-serve ./build/server/index.js",
-    "start": "remix-serve ./build/server/index.js",
+    "start": "prisma migrate deploy && remix-serve ./build/server/index.js",
     "test": "vitest run"
   },
   "prisma": {
