@@ -12,8 +12,15 @@ const apiKey =
   process.env.SHOPIFY_API_KEY ??
   process.env.SHOPIFY_CLIENT_ID ??
   "df413c77e6ed80c6b0115f1d00a9e73e";
-const apiSecretKey = process.env.SHOPIFY_API_SECRET ?? "development-secret";
-const scopes = (process.env.SCOPES ?? "read_products,write_products,read_orders").split(",");
+const apiSecretKey = process.env.SHOPIFY_API_SECRET;
+const scopes = (process.env.SCOPES ?? "read_products,write_products,read_orders")
+  .split(",")
+  .map((scope) => scope.trim())
+  .filter(Boolean);
+
+if (!apiSecretKey) {
+  throw new Error("SHOPIFY_API_SECRET is required");
+}
 
 const defaultSettings = {
   warningThresholdDays: 30,
