@@ -11,7 +11,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "postinstall": "prisma generate",
+    "postinstall": "node scripts/patch-shopify-json-import.mjs && prisma generate",
     "cloudflare:build": "npm run build",
     "cloudflare:dev": "npm run cloudflare:build && wrangler pages dev build/client",
     "cloudflare:deploy": "npm run cloudflare:build && wrangler pages deploy build/client --project-name batchguard-lot-expiry-tracking",
