@@ -1,0 +1,7 @@
+name = "batchguard-lot-expiry-tracking"
+pages_build_output_dir = "./build/client"
+compatibility_date = "2026-07-10"
+compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
+
+# Configure the HYPERDRIVE binding and production secrets in the Cloudflare
+# Pages dashboard. Keeping them out of this file prevents credential leakage.

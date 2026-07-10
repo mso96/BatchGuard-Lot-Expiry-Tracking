@@ -9,7 +9,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "types": ["node"]
+    "types": ["node", "@cloudflare/workers-types"]
   },
-  "include": ["app", "prisma", "tests"]
+  "include": ["app", "functions", "workers", "prisma", "tests"]
 }

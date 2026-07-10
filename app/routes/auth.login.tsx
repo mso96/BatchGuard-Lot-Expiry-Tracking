@@ -3,16 +3,12 @@ import { useEffect, useState } from "react";
 import { Page, Spinner, Text } from "@shopify/polaris";
 import { login } from "../shopify.server";
 
-declare global {
-  interface Window {
-    shopify?: {
-      idToken?: () => Promise<string>;
-    };
-  }
-}
-
 type SessionTokenPayload = {
   dest?: string;
+};
+
+type ShopifyBridgeWithIdToken = Window["shopify"] & {
+  idToken?: () => Promise<string>;
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -41,7 +37,7 @@ export default function EmbeddedLoginBootstrap() {
     let attempts = 0;
 
     const start = async () => {
-      const getIdToken = window.shopify?.idToken;
+      const getIdToken = (window.shopify as ShopifyBridgeWithIdToken | undefined)?.idToken;
       if (!getIdToken) {
         attempts += 1;
         if (attempts < 40 && !cancelled) {

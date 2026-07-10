@@ -1,0 +1,11 @@
+name = "batchguard-maintenance"
+main = "cron.ts"
+compatibility_date = "2026-07-10"
+compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
+
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "replace-with-hyperdrive-id"
+
+[triggers]
+crons = ["0 2 * * *", "0 8 * * *"]

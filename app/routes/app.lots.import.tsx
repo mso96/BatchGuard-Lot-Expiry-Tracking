@@ -1,4 +1,5 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
+import { Prisma } from "@prisma/client";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useNavigation } from "@remix-run/react";
 import {
@@ -113,7 +114,22 @@ function createShopifyVariantResolver(
       `,
       { variables: { query } },
     );
-    const result = await response.json();
+    const result = (await response.json()) as {
+      data?: {
+        productVariants?: {
+          nodes?: Array<{
+            id: string;
+            title: string;
+            sku: string | null;
+            price: string;
+            product: {
+              id: string;
+              title: string;
+            };
+          }>;
+        };
+      };
+    };
     const variant = result.data?.productVariants?.nodes?.[0];
 
     if (!variant) {
@@ -126,7 +142,7 @@ function createShopifyVariantResolver(
       productTitle: variant.product.title,
       variantTitle: variant.title,
       variantSku: variant.sku,
-      variantPrice: variant.price,
+      variantPrice: new Prisma.Decimal(variant.price),
     };
   };
 }

@@ -12,6 +12,10 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate",
+    "cloudflare:build": "npm run build",
+    "cloudflare:dev": "npm run cloudflare:build && wrangler pages dev build/client",
+    "cloudflare:deploy": "npm run cloudflare:build && wrangler pages deploy build/client --project-name batchguard-lot-expiry-tracking",
+    "cloudflare:cron:deploy": "wrangler deploy --config workers/wrangler.cron.toml",
     "start:prod": "prisma migrate deploy && remix-serve ./build/server/index.js",
     "start": "prisma migrate deploy && remix-serve ./build/server/index.js",
     "test": "vitest run"
@@ -20,7 +24,10 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^6.19.3",
     "@prisma/client": "^6.19.3",
+    "@remix-run/cloudflare": "^2.17.5",
+    "@remix-run/cloudflare-pages": "^2.17.5",
     "@remix-run/dev": "^2.17.0",
     "@remix-run/node": "^2.17.0",
     "@remix-run/react": "^2.17.0",
@@ -32,17 +39,20 @@
     "@vitejs/plugin-react": "^4.3.4",
     "isbot": "^5.1.25",
     "node-cron": "^4.6.0",
+    "pg": "^8.22.0",
     "prisma": "^6.19.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "vite": "^5.4.11"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260702.1",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.5"
+    "vitest": "^2.1.5",
+    "wrangler": "^4.109.0"
   }
 }

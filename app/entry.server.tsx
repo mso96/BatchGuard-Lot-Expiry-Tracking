@@ -1,55 +1,35 @@
-import type { EntryContext } from "@remix-run/node";
-import { PassThrough } from "node:stream";
-import { createReadableStreamFromReadable } from "@remix-run/node";
+import type { AppLoadContext, EntryContext } from "@remix-run/cloudflare";
 import { RemixServer } from "@remix-run/react";
 import { isbot } from "isbot";
-import { renderToPipeableStream } from "react-dom/server";
+import { renderToReadableStream } from "react-dom/server";
 import { addDocumentResponseHeaders } from "./shopify.server";
 
-const abortDelay = 5_000;
-
-export default function handleRequest(
+export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
   remixContext: EntryContext,
+  _loadContext: AppLoadContext,
 ) {
   addDocumentResponseHeaders(request, responseHeaders);
 
-  return new Promise((resolve, reject) => {
-    let shellRendered = false;
-    const userAgent = request.headers.get("user-agent");
-    const callbackName = userAgent && isbot(userAgent) ? "onAllReady" : "onShellReady";
-
-    const { pipe, abort } = renderToPipeableStream(
-      <RemixServer context={remixContext} url={request.url} />,
-      {
-        [callbackName]: () => {
-          shellRendered = true;
-          const body = new PassThrough();
-          const stream = createReadableStreamFromReadable(body);
-
-          responseHeaders.set("Content-Type", "text/html");
-          resolve(
-            new Response(stream, {
-              headers: responseHeaders,
-              status: responseStatusCode,
-            }),
-          );
-          pipe(body);
-        },
-        onShellError(error: unknown) {
-          reject(error);
-        },
-        onError(error: unknown) {
-          responseStatusCode = 500;
-          if (shellRendered) {
-            console.error(error);
-          }
-        },
+  const body = await renderToReadableStream(
+    <RemixServer context={remixContext} url={request.url} />,
+    {
+      onError(error: unknown) {
+        console.error(error);
+        responseStatusCode = 500;
       },
-    );
+    },
+  );
 
-    setTimeout(abort, abortDelay);
+  if (isbot(request.headers.get("user-agent"))) {
+    await body.allReady;
+  }
+
+  responseHeaders.set("Content-Type", "text/html");
+  return new Response(body, {
+    headers: responseHeaders,
+    status: responseStatusCode,
   });
 }

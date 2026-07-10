@@ -14,3 +14,4 @@ prisma/render.sqlite-journal
 .shopify/
 .turbo/
 coverage/
+workers/wrangler.cron.toml
