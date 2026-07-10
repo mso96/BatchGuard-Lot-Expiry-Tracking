@@ -12,7 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "postinstall": "node scripts/patch-shopify-json-import.mjs && prisma generate",
-    "cloudflare:build": "npm run build",
+    "cloudflare:build": "node scripts/patch-shopify-json-import.mjs && npm run build",
     "cloudflare:dev": "npm run cloudflare:build && wrangler pages dev build/client",
     "cloudflare:deploy": "npm run cloudflare:build && wrangler pages deploy build/client --project-name batchguard-lot-expiry-tracking",
     "cloudflare:cron:deploy": "wrangler deploy --config workers/wrangler.cron.toml",
